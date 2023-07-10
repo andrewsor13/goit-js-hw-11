@@ -2,107 +2,79 @@ import axios from 'axios';
 import { fetchBreeds, fetchCatByBreed } from './cat-api';
 import Notiflix from 'notiflix';
 
-const selectEl = document.querySelector('.breed-select');
-const infoEl = document.querySelector('.cat-info');
-const loaderText = document.querySelector('.loader');
-const errorText = document.querySelector('.error');
+const breedSelect = document.querySelector('select.breed-select');
+const catInfoDiv = document.querySelector('div.cat-info');
+const loader = document.querySelector('p.loader');
+const error = document.querySelector('p.error');
+const catEl = document.querySelector('.cat');
 
-axios.defaults.headers.common['x-api-key'] =
-  'live_9jwjpGGk82caOs49mWbvkGiQVt1QVnURDPnZvHLqAyFlQysDgMSpJdpWqxzinfUn';
-
-fillList();
-
-function showElement(element) {
-  element.classList.remove('invisible');
-}
-
-function hideElement(element) {
-  element.classList.add('invisible');
+function hideLoader() {
+  loader.style.display = 'none';
+  catInfoDiv.style.display = 'block';
 }
 
 function showLoader() {
-  showElement(loaderText);
-  hideElement(selectEl);
-  hideElement(infoEl);
-  hideElement(errorText);
+  loader.style.display = 'block';
+  catInfoDiv.style.display = 'none';
 }
 
-function hideLoader() {
-  hideElement(loaderText);
-  showElement(selectEl);
-  showElement(infoEl);
+function showBreedSelect() {
+  breedSelect.style.display = 'block';
+}
+
+function populateBreedSelect(breeds) {
+  breedSelect.innerHTML = breeds
+    .map(breed => `<option value="${breed.id}">${breed.name}</option>`)
+    .join('');
+}
+
+function showCatInfo(cat) {
+  const { name, description, temperament } = cat[0].breeds[0];
+
+  const catInfoHTML = `
+    <div class="cat">
+      <img loading="eager" class="cat-img" src="${cat[0].url}" alt="${name} cat">
+      <div class="cat-container">
+        <h2>${name}</h2>
+        <p><b>Description:</b> ${description}</p>
+        <p><b>Temperament:</b> ${temperament}</p>
+      </div>
+    </div>
+  `;
+
+  catInfoDiv.innerHTML = catInfoHTML;
+}
+
+function handleBreedSelect(event) {
+  showLoader();
+  const breedId = event.target.value;
+  fetchCatByBreed(breedId)
+    .then(cat => {
+      showCatInfo(cat);
+      hideLoader();
+    })
+    .catch(() => {
+      showError();
+    });
 }
 
 function showError() {
-  showElement(errorText);
+  Notiflix.Notify.failure(
+    'Oops! Something went wrong! Try reloading the page!'
+  );
 }
 
-function hideError() {
-  hideElement(errorText);
+function init() {
+  fetchBreeds()
+    .then(breeds => {
+      populateBreedSelect(breeds);
+      showBreedSelect();
+      breedSelect.addEventListener('change', handleBreedSelect);
+      hideLoader();
+    })
+    .catch(() => {
+      showError();
+    });
 }
 
-async function fillList() {
-  try {
-    showLoader();
-    hideError();
-
-    const data = await fetchBreeds();
-    const breedList = data.map(
-      ({ name, id }) => `<option value="${id}">${name}</option>`
-    );
-
-    selectEl.innerHTML = breedList;
-    showElement(selectEl);
-    hideLoader();
-  } catch (error) {
-    hideLoader();
-    showError();
-    Notiflix.Notify.failure(
-      'Oops! Something went wrong! Try reloading the page!'
-    );
-  }
-}
-
-selectEl.addEventListener('change', async () => {
-  try {
-    showLoader();
-    hideError();
-    clearCatCard();
-
-    const value = selectEl.value;
-    const name = selectEl.options[selectEl.selectedIndex].text;
-
-    const catData = await fetchCatByBreed(value);
-    createCatCard(catData, name);
-
-    hideLoader();
-  } catch (error) {
-    hideLoader();
-    showError();
-    Notiflix.Notify.failure(
-      'Oops! Something went wrong! Try reloading the page!'
-    );
-  }
-});
-
-function createCatCard(cats, title) {
-  const cat = cats[0];
-
-  const markup = `
-    <div>
-      <img src="${cat.url}" class="cat-img" alt="cat">
-    </div>
-    <div>
-      <h2>${title}</h2>
-      <p>${cat.breeds[0].description}</p>
-      <h3>Temperament</h3>
-      <p class="cat-temp">${cat.breeds[0].temperament}</p> 
-    </div> 
-  `;
-  infoEl.innerHTML = markup;
-  showElement(infoEl);
-}
-
-function clearCatCard() {
-  infoEl.innerHTML = '';
-}
+init();

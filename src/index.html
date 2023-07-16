@@ -4,15 +4,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Homework 11</title>
-  <link rel="stylesheet" href="./css/styles.css" />
+  <title>search photo</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 
 <body>
-  <select class="breed-select"></select>
-  <p class="loader">Loading data, please wait...</p>
-  <p class="error">Oops! Something went wrong! Try reloading the page!</p>
-  <div class="cat-info"></div>
+  <form class="search-form" id="search-form">
+    <input class="input" type="text" name="searchQuery" autocomplete="off" placeholder="Search images..." />
+    <button type="submit" class="search-btn">
+      <svg class="" width="15" height="15">
+        <use href="./Image/icon.svg#icon-search"></use>
+      </svg>
+    </button>
+  </form>
+
+  <div class="gallery">
+    <!-- Картки зображень -->
+  </div>
+  <button type="button" class="load-more is-hidden">Load more</button>
+
+  <script src="/src/js/index.js" type="module"></script>
 </body>
 
 </html>

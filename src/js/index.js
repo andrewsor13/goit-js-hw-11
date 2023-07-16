@@ -1,25 +1,26 @@
 import '../css/style.css';
 import { PixabayAPI } from './pixabay_api';
 import Notiflix from 'notiflix';
-import createGallery from '../templates/cardGallery.hbs';
-import SimpleLightbox from 'simplelightbox';
+import createGalleryTemplate from '../templates/cardGallery.hbs';
+import SimpleLightboxPlugin from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-const formEl = document.querySelector('.search-form');
-const galleryEl = document.querySelector('.gallery');
-const btnLoadMoreEl = document.querySelector('.load-more');
+const searchForm = document.querySelector('.search-form');
+const gallery = document.querySelector('.gallery');
+const loadMoreBtn = document.querySelector('.load-more');
 
 const pixabayAPI = new PixabayAPI();
+const lightbox = new SimpleLightboxPlugin('.gallery a');
 
-let gallery = new SimpleLightbox('.gallery a');
+searchForm.addEventListener('submit', handleFormSubmit);
+loadMoreBtn.addEventListener('click', handleLoadMoreButtonClick);
 
-formEl.addEventListener('submit', handleFormSubmit);
-btnLoadMoreEl.addEventListener('click', handleLoadMoreBtnClick);
-
-function handleFormSubmit(event) {
+async function handleFormSubmit(event) {
   event.preventDefault();
-  galleryEl.innerHTML = '';
-  btnLoadMoreEl.classList.add('is-hidden');
+
+  gallery.innerHTML = '';
+  loadMoreBtn.classList.add('is-hidden');
+
   const form = event.currentTarget;
   const searchQuery = form.elements['searchQuery'].value.trim();
   pixabayAPI.q = searchQuery;
@@ -31,7 +32,7 @@ function handleFormSubmit(event) {
     return;
   }
 
-  searchGallery();
+  await searchGallery();
 }
 
 async function searchGallery() {
@@ -44,35 +45,34 @@ async function searchGallery() {
       );
       return;
     }
-    galleryEl.innerHTML = createGallery(data.hits);
 
+    gallery.innerHTML = createGalleryTemplate(data.hits);
     Notiflix.Notify.success(`We found ${data.totalHits} images.`);
-
-    gallery.refresh();
+    lightbox.refresh();
 
     if (data.totalHits > pixabayAPI.per_page) {
-      btnLoadMoreEl.classList.remove('is-hidden');
+      loadMoreBtn.classList.remove('is-hidden');
     }
   } catch (error) {
     console.log(error);
   }
 }
 
-function handleLoadMoreBtnClick() {
+async function handleLoadMoreButtonClick() {
   pixabayAPI.page += 1;
-  searchLoadMoreImg();
+  await searchLoadMoreImages();
 }
 
-async function searchLoadMoreImg() {
+async function searchLoadMoreImages() {
   try {
     const { data } = await pixabayAPI.fetchImgs();
 
-    galleryEl.insertAdjacentHTML('beforeend', createGallery(data.hits));
-    gallery.refresh();
+    gallery.insertAdjacentHTML('beforeend', createGalleryTemplate(data.hits));
+    lightbox.refresh();
 
     if (data.hits.length < pixabayAPI.per_page) {
-      btnLoadMoreEl.classList.add('is-hidden');
-      return Notiflix.Notify.info(
+      loadMoreBtn.classList.add('is-hidden');
+      Notiflix.Notify.info(
         "We're sorry, but you've reached the end of search results."
       );
     }
